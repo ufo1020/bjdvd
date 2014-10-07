@@ -8,8 +8,11 @@
 
 class PostDetails
 {
+public:
     //TODO: support std::move
     PostDetails();
+    explicit PostDetails(const QStringList& list);
+
     ~PostDetails();
 
     void set_subject(const QString& str);
@@ -19,6 +22,41 @@ class PostDetails
     void set_clicks(const QString& str);
     void set_replies(const QString& str);
     void set_body(const QString& str);
+
+    const QString& get_subject() const
+    {
+        return m_subject;
+    }
+
+    const QString& get_date() const
+    {
+        return m_date;
+    }
+
+    const QString& get_author() const
+    {
+        return m_author;
+    }
+
+    const QString& get_size() const
+    {
+        return m_size;
+    }
+
+    const QString& get_clicks() const
+    {
+        return m_clicks;
+    }
+
+    const QString& get_replies() const
+    {
+        return m_replies;
+    }
+
+    const QString& get_body() const
+    {
+        return m_body;
+    }
 
 private:
     QString m_subject;
@@ -32,12 +70,15 @@ private:
 
 class PageContent
 {
+public:
     PageContent();
     ~PageContent();
 
     void add_post(const PostDetails& post);
-    post get_post(int32_t index);
+    PostDetails get_post(int32_t index);
+//    PostDetails& get_post(int32_t index);
     QStringList get_subject_list();
+    std::vector<PostDetails> get_posts();
 
 
 private:

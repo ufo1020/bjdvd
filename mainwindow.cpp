@@ -3,9 +3,13 @@
 #include <QWebFrame>
 #include <QWebElement>
 #include <QWebElementCollection>
+#include <QSizePolicy>
 #include <QUrl>
 #include <QString>
 #include <QStringList>
+#include <QGestureEvent>
+#include <QScrollEvent>
+#include <QScroller>
 
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
@@ -16,31 +20,46 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-    //view = new QWebView(ui->mainPage);
-    page = new QWebPage();
-    frame = page->mainFrame();
 
-//    frame->setHtml("<html><body><p>First Paragraph</p><p>Second Paragraph</p></body></html>");
-//       QWebElement doc = frame->documentElement();
-//       QWebElement body = doc.firstChild();
+    // = new QWeb(ui->mainPage);
+    _page = new QWebPage();
+    _frame = _page->mainFrame();
 
-    connect(page, SIGNAL(loadFinished(bool)),this, SLOT(decode(bool)));
+    connect(_page, SIGNAL(loadFinished(bool)),this, SLOT(decode(bool)));
     loadPage(QUrl("file:///D:/Dev/Android/bjdvd/bjdvd.htm"));
+
+    for(int i = 0; i < MAX_ITEMS; i++)
+    {
+        QLabel* item = new QLabel();
+        item->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Minimum));
+        item->setFixedWidth(480);
+        item->setMinimumHeight(30);
+        _items.push_back(item);
+        ui->verticalLayout->addWidget(item);
+    }
+    ui->contents->adjustSize();
 }
 
 MainWindow::~MainWindow()
 {
     delete ui;
-    if (view == nullptr) delete view;
-    if (page == nullptr) delete page;
-    view = nullptr;
-    page = nullptr;
+    if (_view == nullptr) delete _view;
+    if (_page == nullptr) delete _page;
+
+    foreach(QLabel* label, _items)
+    {
+        if (label != nullptr) delete label;
+        label = nullptr;
+    }
+
+
+    _view = nullptr;
+    _page = nullptr;
 }
 
 void MainWindow::loadPage(const QUrl& url)
 {
-    //view->load(QUrl("file:///D:/Dev/Android/bjdvd/bjdvd.htm"));
-    frame->load(url);
+    _frame->load(url);
 }
 
 void MainWindow::decode(bool ok)
@@ -50,22 +69,13 @@ void MainWindow::decode(bool ok)
          return;
      }
 
-    QWebElement main_element = frame->documentElement();
+    QWebElement main_element = _frame->documentElement();
 //    qDebug()<<main_element.toInnerXml();
 
-/*
-    QString subject;
-    QString date;
-    QString author;
-    QString size;
-    QString replies;
-    QString clicks;
-    QString body;
-
-*/
 
     // generate page data
     QWebElementCollection posts = main_element.findAll("li[class='post active topic']");
+    qDebug()<<"subjects:"<<posts.count();
     foreach (QWebElement post, posts) {
         QString subject = post.findFirst("div[class='post-subject']").
                                 firstChild().firstChild().toPlainText();
@@ -77,14 +87,84 @@ void MainWindow::decode(bool ok)
         QWebElement size = author.nextSibling();
         QWebElement clicks = size.nextSibling();
         QWebElement replies = clicks.nextSibling();
+        QWebElement body = post.findFirst("div[class='post-body']").firstChild();
 
         QStringList post_details;
-        post_details<<subject.toCaseFolded()<<
+        post_details<<subject<<data.toPlainText()<<author.toPlainText()
+                   <<size.toPlainText()<<clicks.toPlainText()<<replies.toPlainText()
+                   <<body.toPlainText();
 
-        page_content.add_post();
-        qDebug()<<title;
+        _page_content.add_post(PostDetails(post_details));
+        //qDebug()<<title;
     }
 
-//    view->show();
+    initDisplayItems();
+}
 
+bool MainWindow::event(QEvent *event)
+{
+    bool ret = false;
+    qDebug()<<event->type();
+    switch (event->type())
+    {
+        case QEvent::Wheel:
+            ret = scrollEvent(event);
+        case QEvent::Gesture:
+            ret = gestureEvent(event);
+        default:
+            ret = true;
+    }
+
+    return ret;
+
+}
+
+bool MainWindow::scrollEvent(QEvent* event)
+{
+    QScrollEvent* e = static_cast<QScrollEvent*>(event);
+
+    static int y_offset = 0;
+//    QScroller *scroller = QScroller::scroller(ui->centralWidget);
+//    scroller->scrollTo(QPointF(0, y_offset));
+//    ui->centralWidget->move(0, y_offset);
+//    ui->mainPage->scroll(0, y_offset);
+//    y_offset += 100;
+//    qDebug()<<y_offset;
+//    qDebug()<<ui->mainPage->height();
+//    qDebug()<<ui->mainPage->width();
+//    this->update();
+}
+
+bool MainWindow::gestureEvent(QEvent* event)
+{
+    QGestureEvent* e = static_cast<QGestureEvent*>(event);
+
+//    if (QGesture *swipe = event->gesture(Qt::SwipeGesture))
+//        swipeTriggered(static_cast<QSwipeGesture *>(swipe));
+//    else if (QGesture *pan = event->gesture(Qt::PanGesture))
+//        panTriggered(static_cast<QPanGesture *>(pan));
+//    if (QGesture *pinch = event->gesture(Qt::PinchGesture))
+//        pinchTriggered(static_cast<QPinchGesture *>(pinch));
+//    return true;
+}
+
+void MainWindow::initDisplayItems()
+{
+    std::vector<PostDetails> posts = _page_content.get_posts();
+    int y_offset = 0;
+    int item_count = posts.size() > _items.size()?_items.size():posts.size();
+    for(int i = 0; i < item_count; i++)
+    {
+        PostDetails details = posts[i];
+        //_items[i]->setGeometry(QRect(0, y_offset, 480, 100));
+
+        QString content = details.get_subject();
+//        content.append("\n");
+//        content.append(details.get_body());
+//        qDebug() << content;
+        _items[i]->setText(content);
+
+//        y_offset += 100;
+    }
+    ui->contents->adjustSize();
 }
