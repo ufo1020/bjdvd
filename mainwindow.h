@@ -6,6 +6,7 @@
 #include <QMainWindow>
 #include "common.h"
 #include "page.h"
+#include "networkAccess.h"
 
 class QWebView;
 class QWebPage;
@@ -31,8 +32,8 @@ public slots:
     void decode(bool);
 
 protected:
-    bool event(QEvent* event) override final;
-
+//    bool event(QEvent* event) override final;
+    void paintEvent(QPaintEvent *event) override final;
 private:
     constexpr static int MAX_ITEMS = 30;
     constexpr static int MAX_CHARS_IN_LINE = 75;
@@ -46,6 +47,7 @@ private:
     QWebFrame* _frame = nullptr;
     PageContent _page_content;
     std::vector<QLabel*> _items;
+    networkAccess networkManager;
 };
 
 #endif // MAINWINDOW_H

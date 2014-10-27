@@ -14,11 +14,13 @@ TEMPLATE = app
 
 SOURCES += main.cpp\
         mainwindow.cpp \
-    page.cpp
+    page.cpp \
+    networkAccess.cpp
 
 HEADERS  += mainwindow.h \
     page.h \
-    common.h
+    common.h \
+    networkAccess.h
 
 FORMS    += mainwindow.ui
 

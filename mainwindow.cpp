@@ -10,16 +10,21 @@
 #include <QGestureEvent>
 #include <QScrollEvent>
 #include <QScroller>
+#include <QRegExp>
+#include <QScrollBar>
 
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "page.h"
+
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+
+    ui->scrollArea->verticalScrollBar()->setStyleSheet("QScrollBar {width:0px;}");
 
     // = new QWeb(ui->mainPage);
     _page = new QWebPage();
@@ -32,13 +37,17 @@ MainWindow::MainWindow(QWidget *parent) :
     {
         QLabel* item = new QLabel();
         item->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Minimum));
-        item->setFixedWidth(480);
+        item->setFixedWidth(ui->contents->width());
         item->setMinimumHeight(30);
+        item->setWordWrap(true);
         _items.push_back(item);
         ui->verticalLayout->addWidget(item);
     }
-    ui->contents->adjustSize();
+//    ui->contents->adjustSize();
+    qDebug()<<"h:"<<ui->contents->height()<<" w:"<<ui->contents->width();
+
 }
+
 
 MainWindow::~MainWindow()
 {
@@ -101,34 +110,23 @@ void MainWindow::decode(bool ok)
     initDisplayItems();
 }
 
-bool MainWindow::event(QEvent *event)
+void MainWindow::paintEvent(QPaintEvent *event)
 {
-    bool ret = false;
-    qDebug()<<event->type();
-    switch (event->type())
-    {
-        case QEvent::Wheel:
-            ret = scrollEvent(event);
-        case QEvent::Gesture:
-            ret = gestureEvent(event);
-        default:
-            ret = true;
-    }
-
-    return ret;
-
+    qDebug()<<"here...";
 }
 
 bool MainWindow::scrollEvent(QEvent* event)
 {
     QScrollEvent* e = static_cast<QScrollEvent*>(event);
 
+
     static int y_offset = 0;
 //    QScroller *scroller = QScroller::scroller(ui->centralWidget);
 //    scroller->scrollTo(QPointF(0, y_offset));
 //    ui->centralWidget->move(0, y_offset);
-//    ui->mainPage->scroll(0, y_offset);
-//    y_offset += 100;
+    ui->contents->scroll(0,100);
+    y_offset += 100;
+    qDebug()<<"scrolling y:"<<y_offset;
 //    qDebug()<<y_offset;
 //    qDebug()<<ui->mainPage->height();
 //    qDebug()<<ui->mainPage->width();
@@ -156,15 +154,19 @@ void MainWindow::initDisplayItems()
     for(int i = 0; i < item_count; i++)
     {
         PostDetails details = posts[i];
-        //_items[i]->setGeometry(QRect(0, y_offset, 480, 100));
+//        _items[i]->setGeometry(QRect(0, y_offset, 480, 100));
 
-        QString content = details.get_subject();
-//        content.append("\n");
-//        content.append(details.get_body());
+        QString content = (details.get_subject());
+
+        content.append("\n");
+        content.append((details.get_body()));
 //        qDebug() << content;
         _items[i]->setText(content);
 
-//        y_offset += 100;
+        y_offset += 100;
     }
     ui->contents->adjustSize();
+    qDebug()<<"h:"<<ui->contents->height()<<" w:"<<ui->contents->width();
+    emit QPaintEvent(ui->contents->rect());
 }
+
