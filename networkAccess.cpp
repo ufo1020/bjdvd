@@ -7,14 +7,11 @@
 #include <QNetworkCookieJar>
 
 networkAccess::networkAccess(QObject *parent) : QObject(parent),
-    mLoginUrl(LOGIN_URL),
-    mMainUrl(MAIN_URL)
+    mLoginUrl("http://www.bjdvd.org/signin/"),
+    mMainUrl("http://www.bjdvd.org/")
 {
     manager.setCookieJar(new QNetworkCookieJar(this));
-    QObject::connect(&manager, SIGNAL(finished(QNetworkReply*)), this, SLOT(replyFinished(QNetworkReply*)));
-    QObject::connect(reply, SIGNAL(readyRead()), this, SLOT(loginGetReadyRead()));
-    QObject::connect(reply, SIGNAL(readyRead()), this, SLOT(loginPostReadyRead()));
-    QObject::connect(reply, SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(slotError(QNetworkReply::NetworkError)));
+    connect(&manager, SIGNAL(finished(QNetworkReply *)), this, SLOT(replyFinished(QNetworkReply *)));
 
     loginGet();
 }
@@ -26,7 +23,6 @@ networkAccess::~networkAccess()
 
 void networkAccess::loginGet()
 {
-
     QNetworkRequest request(mLoginUrl);
 //    TODO User agent format:
 //    Mozilla/[version] ([system and browser information]) [platform] ([platform details]) [extensions].
@@ -78,10 +74,28 @@ void networkAccess::loginPostPassword()
 
 void networkAccess::replyFinished(QNetworkReply* reply)
 {
-    qDebug()<<"replyFinished";
     if (reply->error() != QNetworkReply::NoError){
         qWarning() << "ERROR:" << reply->errorString();
         return;
+    }
+
+    mLoginState++;
+    qDebug()<<"reply ready read "<<mLoginState;
+    switch (mLoginState)
+    {
+    case STATES::UNKNOWN:
+        break;
+    case STATES::LOGIN_GET:
+        loginGetReadyRead();
+        break;
+    case STATES::LOGIN_POST:
+        loginPostReadyRead();
+        break;
+    case STATES::REDIRECT:
+        mainPageReadyRead();
+        break;
+    default:
+        break;
     }
 }
 
@@ -96,7 +110,7 @@ void networkAccess::loginGetReadyRead()
 
     manager.cookieJar()->setCookiesFromUrl(cookies, reply->request().url());
 //    qDebug() << "Saved cookies: " << manager.cookieJar()->getAllCookies();
-    qDebug() << "COOKIES " << manager.cookieJar()->cookiesForUrl(QUrl(LOGIN_URL));
+    qDebug() << "COOKIES " << manager.cookieJar()->cookiesForUrl(mLoginUrl);
 
     loginPostPassword();
 }
@@ -128,11 +142,6 @@ void networkAccess::slotError(QNetworkReply::NetworkError e)
     qDebug()<<"slotError "<< e;
 }
 
-void networkAccess::load(const QUrl&)
-{
-
-}
-
 void networkAccess::redirect(const QUrl &url)
 {
     QNetworkRequest request(url);
@@ -144,7 +153,5 @@ void networkAccess::redirect(const QUrl &url)
     qDebug() << "POST Header COOKIES " << manager.cookieJar()->cookiesForUrl(mLoginUrl);
 
     reply = manager.get(request);
-
-    QObject::connect(reply, SIGNAL(readyRead()), this, SLOT(mainPageReadyRead()));
-    QObject::connect(reply, SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(slotError(QNetworkReply::NetworkError)));
 }
+

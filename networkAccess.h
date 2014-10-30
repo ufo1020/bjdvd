@@ -9,7 +9,7 @@
 
 class networkAccess : public QObject
 {
-//    Q_OBJECT
+    Q_OBJECT
 
 public:
     networkAccess(QObject *parent = 0);
@@ -26,28 +26,30 @@ public:
     void load(const QUrl&);
     void redirect(const QUrl&);
 
-public slots:
-    void replyFinished(QNetworkReply*);
+
     void loginGetReadyRead();
     void loginPostReadyRead();
+    void redirectReadyRead();
     void mainPageReadyRead();
+public slots:
+    void replyFinished(QNetworkReply*);
     void slotError(QNetworkReply::NetworkError);
+
 
 
 private:
     enum STATES {
+        UNKNOWN = 0,
         LOGIN_GET,
         LOGIN_POST,
         REDIRECT
     };
-//    static constexpr const char* SOMETHING = "something";
-    static constexpr char* LOGIN_URL = "http://www.bjdvd.org/signin/";
-    static constexpr char* MAIN_URL = "http://www.bjdvd.org/";
 
     QNetworkAccessManager manager;
     QNetworkReply* reply;
     QUrl mLoginUrl;
     QUrl mMainUrl;
+    int mLoginState = STATES::UNKNOWN;
 //    QList<QNetworkCookie> cookies;
 };
 
