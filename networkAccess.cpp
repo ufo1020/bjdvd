@@ -45,29 +45,51 @@ void networkAccess::loginPostPassword()
 {
     //csrfmiddlewaretoken=1955c5b837fe02710ec439c926641549&
     //username=%E5%8D%95%E7%A8%8B%E5%B7%B4%E5%A3%AB&password=3232917&remember_me=on&next=
-    QByteArray postData;
-    postData.append("csrfmiddlewaretoken=1955c5b837fe02710ec439c926641549&");
-    postData.append("username=%E5%8D%95%E7%A8%8B%E5%B7%B4%E5%A3%AB&");
-    postData.append("password=3232917&");
-    postData.append("remember_me=on&next=");
-    QNetworkRequest request(mLoginUrl);
+    QString csrftoken;
+
+    QNetworkRequest request(mMainUrl);
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/x-www-form-urlencoded");
     request.setHeader(QNetworkRequest::ContentLengthHeader, 121);
 
-//    QList<QNetworkCookie> cookies;
-//    cookies.append(QNetworkCookie("csrftoken", "1955c5b837fe02710ec439c926641549"));
-//    cookies.append(QNetworkCookie("sessionid", "6b90405022f9d70127700b82e2f1fc6b"));
+    // set cookies
+    QList<QNetworkCookie> cookies = manager.cookieJar()->cookiesForUrl(mLoginUrl);
+    for(QNetworkCookie cookie : cookies)
+    {
+        // get csrftoken value
+        if(cookie.name() == QByteArray("csrftoken"))
+        {
+            csrftoken = cookie.value();
+        }
+        request.setHeader(QNetworkRequest::CookieHeader, QVariant::fromValue(cookie));
+        qDebug() << "POST Header COOKIES " << cookie;
+    }
 
-    //set cookies
-//    QList<QNetworkCookie> cookies = manager.cookieJar()->cookiesForUrl(QUrl(LOGIN_URL));
-    QVariant variantCookies;
-    variantCookies.setValue(manager.cookieJar()->cookiesForUrl(mLoginUrl));
-//    qDebug<<params;
-    request.setHeader(QNetworkRequest::CookieHeader,  variantCookies);
-    qDebug() << "POST Header COOKIES " << manager.cookieJar()->cookiesForUrl(mLoginUrl);
+    // handle redirect(302 request)
+//    QVariant new_location = reply->header(QNetworkRequest::LocationHeader);
+//    if (new_location.isValid())
+//    {
+//        QUrl redirect_url(new_location.toString());
+//        if(redirect_url != mMainUrl){
+//            qDebug()<<"Redirecting to UNEXPECTED URL";
+//            request.setUrl(redirect_url);
+//        }
+//    }
 
     //TODO User agent format:
     request.setHeader(QNetworkRequest::UserAgentHeader, "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.124 Safari/537.36");
+
+    if (csrftoken.size() == 0)
+    {
+        qDebug()<<"csrftoken WRONG!!! Abort...";
+        return;
+    }
+    QByteArray postData;
+    postData.append("csrfmiddlewaretoken=");
+    postData.append(csrftoken);
+    postData.append("&");
+    postData.append("username=%E5%8D%95%E7%A8%8B%E5%B7%B4%E5%A3%AB&");
+    postData.append("password=3232917&");
+    postData.append("remember_me=on&next=");
 
     reply = manager.post(request, postData);
 }
@@ -106,7 +128,7 @@ void networkAccess::loginGetReadyRead()
 
     QVariant variantCookies = reply->header(QNetworkRequest::SetCookieHeader);
     QList<QNetworkCookie> cookies = qvariant_cast<QList<QNetworkCookie> >(variantCookies);
-    qDebug() << "Cookies reply: " << cookies;
+//    qDebug() << "Cookies reply: " << cookies;
 
     manager.cookieJar()->setCookiesFromUrl(cookies, reply->request().url());
 //    qDebug() << "Saved cookies: " << manager.cookieJar()->getAllCookies();
@@ -154,4 +176,3 @@ void networkAccess::redirect(const QUrl &url)
 
     reply = manager.get(request);
 }
-
