@@ -1,4 +1,5 @@
 #include "networkAccess.h"
+#include "cookiejar.h"
 #include <QNetworkAccessManager>
 #include <QByteArray>
 #include <QNetworkRequest>
@@ -10,21 +11,55 @@ networkAccess::networkAccess(QObject *parent) : QObject(parent),
     mLoginUrl("http://www.bjdvd.org/signin/"),
     mMainUrl("http://www.bjdvd.org/")
 {
-    manager.setCookieJar(new QNetworkCookieJar(this));
+    m_cookies_jar = new CookieJar(this, mLoginUrl);
+    manager.setCookieJar(m_cookies_jar);
+
     connect(&manager, SIGNAL(finished(QNetworkReply *)), this, SLOT(replyFinished(QNetworkReply *)));
 
-    open_url();
+    // if not cookies found, login first, otherwise, uses cookies to open main page
+    if (m_cookies_jar->is_empty()) {
+        open_login();
+    }else{
+        open_main_page_with_cookies();
+    }
 }
 
 networkAccess::~networkAccess()
 {
+    //save cookies to disk
+    if (m_cookies_jar != nullptr) delete m_cookies_jar;
 }
 
-void networkAccess::open_url()
+void networkAccess::open_login()
 {
     QNetworkRequest request(mMainUrl);
     request.setHeader(QNetworkRequest::UserAgentHeader, USER_AGENT_HEADER);
     reply = manager.get(request);
+}
+
+// Request URL:http://www.bjdvd.org/
+// Request Method:GET
+// Status Code:200 OK
+// Request Headers
+//      Accept:text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8
+//      Accept-Encoding:gzip,deflate,sdch
+//      Accept-Language:en,zh-CN;q=0.8,zh;q=0.6
+//      Connection:keep-alive
+//      Cookie:sessionid=c2f5f7e83fd799a32a42553eff559cf2; csrftoken=51190423f8430ac602b080b451f7d8c2
+//      Host:www.bjdvd.org
+//      User-Agent:Mozilla/5.0 (Windows NT 6.1; .....
+void networkAccess::open_main_page_with_cookies()
+{
+    QNetworkRequest request(mMainUrl);
+    request.setHeader(QNetworkRequest::UserAgentHeader, USER_AGENT_HEADER);
+    QList<QNetworkCookie> cookies = manager.cookieJar()->cookiesForUrl(mLoginUrl);
+    for(QNetworkCookie cookie : cookies)
+    {
+        request.setHeader(QNetworkRequest::CookieHeader, QVariant::fromValue(cookie));
+    }
+
+    reply = manager.get(request);
+    mLoginState = DIRECT_MAIN_PAGE;
 }
 
 void networkAccess::replyFinished(QNetworkReply* reply)
@@ -51,6 +86,9 @@ void networkAccess::replyFinished(QNetworkReply* reply)
         break;
     case STATES::REDIRECT_MAIN_PAGE:
         redirect_main_page_ready_read();
+        break;
+    case STATES::DIRECT_MAIN_PAGE:
+        direct_main_page_ready_read();
         break;
     default:
         break;
@@ -216,32 +254,64 @@ void networkAccess::login_post_ready_read()
 
     QNetworkRequest request(mMainUrl);
 
-    // set-cookie only has sessionid
+    // set-cookie update it into Cookiejar
     QVariant variantCookies = reply->header(QNetworkRequest::SetCookieHeader);
-    QList<QNetworkCookie> sessionid = qvariant_cast<QList<QNetworkCookie> >(variantCookies);
-    qDebug() << "Cookies reply: " << sessionid;
-    Q_ASSERT(sessionid.size() == 1);
+    // new cookies should only has session id
+    QList<QNetworkCookie> new_cookies_sessionid = qvariant_cast<QList<QNetworkCookie> >(variantCookies);
+    qDebug() << "Cookies reply: " << new_cookies_sessionid;
+    Q_ASSERT(new_cookies_sessionid.size() == 1);
 
-    request.setHeader(QNetworkRequest::UserAgentHeader, USER_AGENT_HEADER);
-
-    // set csrftoken from cookie Jar, set sessionid from last response
-    QList<QNetworkCookie> cookies = manager.cookieJar()->cookiesForUrl(mLoginUrl);
-    for(QNetworkCookie cookie : cookies)
+    // old cookies has token and session id
+    QList<QNetworkCookie> stored_cookies = manager.cookieJar()->cookiesForUrl(mLoginUrl);
+    // delete session id from old cookies
+    for(QNetworkCookie cookie : stored_cookies)
     {
-        if(cookie.name() == QByteArray("csrftoken"))
+        if(cookie.name() == QByteArray("sessionid"))
         {
-            request.setHeader(QNetworkRequest::CookieHeader, QVariant::fromValue(cookie));
-            break;
+            if (!manager.cookieJar()->deleteCookie(cookie)) {
+                qDebug()<<"delete session id failed HALT.....";
+                return;                ;
+            }
         }
     }
-    request.setHeader(QNetworkRequest::CookieHeader, QVariant::fromValue(sessionid));
 
+    // insert session id in old cookies
+
+    for(QNetworkCookie cookie : new_cookies_sessionid)
+    {
+        stored_cookies.append(cookie);
+//        if (!manager.cookieJar()->insertCookie(cookie)) {
+//            qDebug()<<"update session id failed HALT.....";
+//            return;
+//        }
+    }
+
+    // set csrftoken from cookie Jar, set sessionid from last response
+//    stored_cookies = manager.cookieJar()->cookiesForUrl(mLoginUrl);
+    for(QNetworkCookie cookie : stored_cookies)
+    {
+//        if(cookie.name() == QByteArray("csrftoken"))
+//        {
+            request.setHeader(QNetworkRequest::CookieHeader, QVariant::fromValue(cookie));
+//            break;
+//        }
+            qDebug()<<"new cookies send: "<<cookie;
+    }
+//    request.setHeader(QNetworkRequest::CookieHeader, QVariant::fromValue(sessionid));
+
+    manager.cookieJar()->setCookiesFromUrl(stored_cookies, mLoginUrl);
+    request.setHeader(QNetworkRequest::UserAgentHeader, USER_AGENT_HEADER);
     reply = manager.get(request);
 }
 
 void networkAccess::redirect_main_page_ready_read()
 {
     qDebug()<<reply->readAll();
+}
+
+void networkAccess::direct_main_page_ready_read()
+{
+    qDebug()<<"direct main page ready read \n"<<reply->readAll();
 }
 
 void networkAccess::slotError(QNetworkReply::NetworkError e)

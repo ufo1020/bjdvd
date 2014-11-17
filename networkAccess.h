@@ -7,6 +7,8 @@
 #include <QUrl>
 #include <QNetworkCookie>
 
+class CookieJar;
+
 class networkAccess : public QObject
 {
     Q_OBJECT
@@ -16,7 +18,8 @@ public:
     ~networkAccess();
 
     // send request to open bjdvd page
-    void open_url();
+    void open_login();
+    void open_main_page_with_cookies();
 
     // first step of login, send get request, returns cookies
     void loginGetCookies();
@@ -25,12 +28,12 @@ public:
     // load page after login
     void load(const QUrl&);
 
-
     // Reply ready to read
     void get_main_page_ready_read();
     void redirect_login_page_ready_read();
     void login_post_ready_read();
     void redirect_main_page_ready_read();
+    void direct_main_page_ready_read();
     void mainPageReadyRead();
 public slots:
     void replyFinished(QNetworkReply*);
@@ -57,11 +60,13 @@ private:
         GET_MAIN_PAGE,
         REDIRECT_LOGIN_PAGE,
         LOGIN_POST,
-        REDIRECT_MAIN_PAGE
+        REDIRECT_MAIN_PAGE,
+        DIRECT_MAIN_PAGE   //direct open main page with cookies stored before
     };
 
     QNetworkAccessManager manager;
-    QNetworkReply* reply;
+    QNetworkReply* reply = nullptr;
+    CookieJar* m_cookies_jar = nullptr;
     QUrl mLoginUrl;
     QUrl mMainUrl;
     int mLoginState = STATES::UNKNOWN;
