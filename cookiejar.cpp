@@ -34,7 +34,11 @@ bool CookieJar::save(const QUrl &url)
     }
 
     QSettings cookieSettings(directory + QLatin1String("/cookies.ini"), QSettings::IniFormat);
-    cookieSettings.setValue(QLatin1String("cookies"), QVariant::fromValue(cookies));
+    // Cannot save QList as QVariabnt tyep
+    for(QNetworkCookie cookie : cookies)
+    {
+        cookieSettings.setValue(QString::fromLatin1(cookie.name()), QVariant::fromValue(cookie));
+    }
 }
 
 bool CookieJar::load(const QUrl &url)
@@ -44,9 +48,19 @@ bool CookieJar::load(const QUrl &url)
 
     if (!QFile::exists(directory + QLatin1String("/cookies.ini"))) return false;
     QSettings cookieSettings(directory + QLatin1String("/cookies.ini"), QSettings::IniFormat);
-    QList<QNetworkCookie> cookies = qvariant_cast<QList<QNetworkCookie> >(
-                cookieSettings.value(QLatin1String("cookies"), QVariant()));
-    if (cookies.size() == 0) return false;
+
+    // empty list created here
+    QList<QNetworkCookie> cookies;
+    // retrieve all keys from cookies.ini
+    QStringList keys = cookieSettings.allKeys();
+    for(auto key: keys)
+    {
+        QNetworkCookie cookie = qvariant_cast<QNetworkCookie>(cookieSettings.value(key, QVariant()));
+        cookies.append(cookie);
+    }
+//    QList<QNetworkCookie> cookies = qvariant_cast<QList<QNetworkCookie> >(
+//                cookieSettings.value(QLatin1String("cookies"), QVariant()));
+//    if (cookies.size() == 0) return false;
     setCookiesFromUrl(cookies, url);
     return true;
 }
