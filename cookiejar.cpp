@@ -11,12 +11,12 @@ CookieJar::CookieJar(QObject* parent, const QUrl& url) :
     QNetworkCookieJar(parent),
     m_url(url)
 {
-    m_has_cookies = load(m_url);
+//    m_has_cookies = load(m_url);
 }
 
 CookieJar::~CookieJar()
 {
-    save(m_url);
+//    save(m_url);
 }
 
 bool CookieJar::save(const QUrl &url)

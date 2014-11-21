@@ -47,7 +47,7 @@ private:
     QWebFrame* _frame = nullptr;
     PageContent _page_content;
     std::vector<QLabel*> _items;
-    networkAccess networkManager;
+    networkAccess* m_networkManager = nullptr;
 };
 
 #endif // MAINWINDOW_H

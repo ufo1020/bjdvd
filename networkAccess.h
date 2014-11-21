@@ -6,6 +6,7 @@
 #include <QNetworkReply>
 #include <QUrl>
 #include <QNetworkCookie>
+#include <QWebFrame>
 
 class CookieJar;
 
@@ -14,7 +15,7 @@ class networkAccess : public QObject
     Q_OBJECT
 
 public:
-    networkAccess(QObject *parent = 0);
+    networkAccess(QObject *parent = 0, QWebFrame *frame = 0);
     ~networkAccess();
 
     // send request to open bjdvd page
@@ -32,9 +33,9 @@ public:
     void get_main_page_ready_read();
     void redirect_login_page_ready_read();
     void login_post_ready_read();
-    void redirect_main_page_ready_read();
-    void direct_main_page_ready_read();
-    void mainPageReadyRead();
+//    void redirect_main_page_ready_read();
+//    void direct_main_page_ready_read();
+    void main_page_ready_read();
 public slots:
     void replyFinished(QNetworkReply*);
     void slotError(QNetworkReply::NetworkError);
@@ -64,6 +65,7 @@ private:
         DIRECT_MAIN_PAGE   //direct open main page with cookies stored before
     };
 
+    QWebFrame* m_frame = nullptr;
     QNetworkAccessManager manager;
     QNetworkReply* reply = nullptr;
     CookieJar* m_cookies_jar = nullptr;
