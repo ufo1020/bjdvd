@@ -2,8 +2,6 @@
 #include <QStandardPaths>
 #include <QDir>
 #include <QFile>
-#include <QList>
-#include <QNetworkCookie>
 #include <QVariant>
 #include <QSettings>
 
@@ -11,7 +9,9 @@ CookieJar::CookieJar(QObject* parent, const QUrl& url) :
     QNetworkCookieJar(parent),
     m_url(url)
 {
+    qRegisterMetaTypeStreamOperators<QNetworkCookie>("QNetworkCookie");
     m_has_cookies = load(m_url);
+
 }
 
 CookieJar::~CookieJar()
@@ -35,6 +35,8 @@ bool CookieJar::save(const QUrl &url)
 
     QSettings cookieSettings(directory + QLatin1String("/cookies.ini"), QSettings::IniFormat);
     // Cannot save QList as QVariabnt tyep
+
+//    cookieSettings.setValue(QLatin1String("cookies"), QVariant::fromValue(cookies));
     for(QNetworkCookie cookie : cookies)
     {
         cookieSettings.setValue(QString::fromLatin1(cookie.name()), QVariant::fromValue(cookie));
@@ -68,4 +70,19 @@ bool CookieJar::load(const QUrl &url)
 bool CookieJar::is_empty() const
 {
     return !m_has_cookies;
+}
+
+// Used by QMetaType::load() and QMetaType::save() which called when saving and loading settings
+QDataStream &operator<<(QDataStream &out, const QNetworkCookie &cookie)
+{
+    out << cookie.toRawForm();
+}
+
+QDataStream &operator>>(QDataStream &in, QNetworkCookie &cookie)
+{
+    QByteArray raw_data;
+    in >> raw_data;
+    QList<QNetworkCookie> cookies = QNetworkCookie::parseCookies(raw_data);
+    Q_ASSERT(cookies.length() == 1);
+    cookie = cookies.at(0);
 }

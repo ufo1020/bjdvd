@@ -35,6 +35,7 @@ void networkAccess::open_login()
     QNetworkRequest request(mMainUrl);
     request.setHeader(QNetworkRequest::UserAgentHeader, USER_AGENT_HEADER);
     reply = manager.get(request);
+    mLoginState = STATES::GET_MAIN_PAGE;
 }
 
 // Request URL:http://www.bjdvd.org/
@@ -59,7 +60,7 @@ void networkAccess::open_main_page_with_cookies()
     }
 
     reply = manager.get(request);
-    mLoginState = DIRECT_MAIN_PAGE;
+    mLoginState = STATES::DIRECT_MAIN_PAGE;
 }
 
 void networkAccess::replyFinished(QNetworkReply* reply)
@@ -69,7 +70,6 @@ void networkAccess::replyFinished(QNetworkReply* reply)
         return;
     }
 
-    mLoginState++;
     qDebug()<<"reply ready read "<<mLoginState;
     switch (mLoginState)
     {
@@ -130,6 +130,7 @@ void networkAccess::get_main_page_ready_read()
     QNetworkRequest request(QUrl(location.toString()));
     request.setHeader(QNetworkRequest::UserAgentHeader, USER_AGENT_HEADER);
     reply = manager.get(request);
+    mLoginState = STATES::REDIRECT_LOGIN_PAGE;
 }
 
 // redirect to login page
@@ -215,6 +216,7 @@ void networkAccess::redirect_login_page_ready_read()
     postData.append("remember_me=on&next=%2F");
 
     reply = manager.post(request, postData);
+    mLoginState = STATES::LOGIN_POST;
 }
 
 // Ready to open the main page
@@ -302,11 +304,13 @@ void networkAccess::login_post_ready_read()
     manager.cookieJar()->setCookiesFromUrl(stored_cookies, mLoginUrl);
     request.setHeader(QNetworkRequest::UserAgentHeader, USER_AGENT_HEADER);
     reply = manager.get(request);
+    mLoginState = STATES::REDIRECT_MAIN_PAGE;
 }
 
 void networkAccess::redirect_main_page_ready_read()
 {
     qDebug()<<reply->readAll();
+
 }
 
 void networkAccess::direct_main_page_ready_read()
