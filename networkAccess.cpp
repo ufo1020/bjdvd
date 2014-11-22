@@ -7,7 +7,9 @@
 #include <QVariant>
 #include <QNetworkCookieJar>
 
-networkAccess::networkAccess(QObject *parent) : QObject(parent),
+networkAccess::networkAccess(QObject *parent, QWebFrame *frame) :
+    QObject(parent),
+    m_frame(frame),
     mLoginUrl("http://www.bjdvd.org/signin/"),
     mMainUrl("http://www.bjdvd.org/")
 {
@@ -60,6 +62,11 @@ void networkAccess::open_main_page_with_cookies()
     }
 
     reply = manager.get(request);
+
+    if (m_frame) {
+        m_frame->load(request);
+    }
+
     mLoginState = STATES::DIRECT_MAIN_PAGE;
 }
 
@@ -85,10 +92,8 @@ void networkAccess::replyFinished(QNetworkReply* reply)
         login_post_ready_read();
         break;
     case STATES::REDIRECT_MAIN_PAGE:
-        redirect_main_page_ready_read();
-        break;
     case STATES::DIRECT_MAIN_PAGE:
-        direct_main_page_ready_read();
+        main_page_ready_read();
         break;
     default:
         break;
@@ -131,6 +136,10 @@ void networkAccess::get_main_page_ready_read()
     request.setHeader(QNetworkRequest::UserAgentHeader, USER_AGENT_HEADER);
     reply = manager.get(request);
     mLoginState = STATES::REDIRECT_LOGIN_PAGE;
+
+    if (m_frame) {
+        m_frame->load(request);
+    }
 }
 
 // redirect to login page
@@ -309,13 +318,13 @@ void networkAccess::login_post_ready_read()
 
 void networkAccess::redirect_main_page_ready_read()
 {
-    qDebug()<<reply->readAll();
-
+//    qDebug()<<reply->readAll();
+    main_page_ready_read();
 }
 
-void networkAccess::direct_main_page_ready_read()
+void networkAccess::main_page_ready_read()
 {
-    qDebug()<<"direct main page ready read \n"<<reply->readAll();
+    qDebug()<<"main page!!!!! "<<reply->readAll();
 }
 
 void networkAccess::slotError(QNetworkReply::NetworkError e)

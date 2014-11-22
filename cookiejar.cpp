@@ -11,7 +11,6 @@ CookieJar::CookieJar(QObject* parent, const QUrl& url) :
 {
     qRegisterMetaTypeStreamOperators<QNetworkCookie>("QNetworkCookie");
     m_has_cookies = load(m_url);
-
 }
 
 CookieJar::~CookieJar()

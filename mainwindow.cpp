@@ -32,7 +32,8 @@ MainWindow::MainWindow(QWidget *parent) :
     _frame = _page->mainFrame();
 
     connect(_page, SIGNAL(loadFinished(bool)),this, SLOT(decode(bool)));
-    loadPage(QUrl("file:///D:/Dev/Android/bjdvd/bjdvd.htm"));
+//    loadPage(QUrl("file:///D:/Dev/Android/bjdvd/bjdvd.htm"));
+    m_networkManager = new networkAccess(this, _frame);
 
     for(int i = 0; i < MAX_ITEMS; i++)
     {
@@ -55,6 +56,7 @@ MainWindow::~MainWindow()
     delete ui;
     if (_view == nullptr) delete _view;
     if (_page == nullptr) delete _page;
+    delete m_networkManager;
 
     foreach(QLabel* label, _items)
     {
@@ -80,7 +82,7 @@ void MainWindow::decode(bool ok)
      }
 
     QWebElement main_element = _frame->documentElement();
-//    qDebug()<<main_element.toInnerXml();
+    qDebug()<<main_element.toInnerXml();
 
 
     // generate page data
