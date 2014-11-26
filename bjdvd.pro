@@ -16,13 +16,16 @@ SOURCES += main.cpp\
         mainwindow.cpp \
     page.cpp \
     networkAccess.cpp \
-    cookiejar.cpp
+    cookiejar.cpp \
+    userData.cpp \
+    userdata.cpp
 
 HEADERS  += mainwindow.h \
     page.h \
     common.h \
     networkAccess.h \
-    cookiejar.h
+    cookiejar.h \
+    userdata.h
 
 FORMS    += mainwindow.ui
 

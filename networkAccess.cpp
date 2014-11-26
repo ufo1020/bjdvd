@@ -316,12 +316,6 @@ void networkAccess::login_post_ready_read()
     mLoginState = STATES::REDIRECT_MAIN_PAGE;
 }
 
-void networkAccess::redirect_main_page_ready_read()
-{
-//    qDebug()<<reply->readAll();
-    main_page_ready_read();
-}
-
 void networkAccess::main_page_ready_read()
 {
     qDebug()<<"main page!!!!! "<<reply->readAll();
