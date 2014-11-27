@@ -15,17 +15,18 @@ TEMPLATE = app
 SOURCES += main.cpp\
         mainwindow.cpp \
     page.cpp \
-    networkAccess.cpp \
     cookiejar.cpp \
-    userData.cpp \
-    userdata.cpp
+    datamanager.cpp \
+    userdata.cpp \
+    networkaccess.cpp
 
 HEADERS  += mainwindow.h \
     page.h \
     common.h \
-    networkAccess.h \
     cookiejar.h \
-    userdata.h
+    datamanager.h \
+    userdata.h \
+    networkaccess.h
 
 FORMS    += mainwindow.ui
 
