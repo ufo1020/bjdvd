@@ -21,6 +21,9 @@ public:
     }
 
 private:
+    static const uint BITS_PER_BYTE = 8U;
+    uint get_mask(int bytes);
+
     QString m_username;
     QString m_password;
 };
