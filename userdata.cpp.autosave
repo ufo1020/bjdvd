@@ -34,9 +34,6 @@ QByteArray userData::to_utf8_bytes(QString& string)
                 hex_code = hex_code >> BITS_PER_UTF8_BYTE;
             }
             // is it the 1st byte
-
-//            uchar lower_header = UTF_BYTE_HEADER >> (bytes_in_sequence - 1U);
-//            uchar higher_header = ~((1U << (BITS_PER_BYTE - (bytes_in_sequence - 1U))) -1U);
             uchar byte = hex_code | (BYTE_MASK >> (bytes_in_sequence - 1U));
             bytes.insert(0, str.setNum(byte, 16));
 
