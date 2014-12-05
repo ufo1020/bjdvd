@@ -28,7 +28,8 @@ HEADERS  += mainwindow.h \
     userdata.h \
     networkaccess.h
 
-FORMS    += mainwindow.ui
+FORMS    += mainwindow.ui \
+    login.ui
 
 CONFIG += mobility c++11
 MOBILITY = 

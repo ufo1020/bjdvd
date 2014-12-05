@@ -15,6 +15,7 @@ class QWebFrame;
 
 namespace Ui {
 class MainWindow;
+class Login;
 }
 
 class MainWindow : public QMainWindow
@@ -41,7 +42,8 @@ private:
     bool gestureEvent(QEvent* event);
     bool scrollEvent(QEvent* event);
 
-    Ui::MainWindow *ui;
+    Ui::MainWindow* _main_ui;
+    Ui::Login* _login_ui;
     QWebView* _view = nullptr;
     QWebPage* _page = nullptr;
     QWebFrame* _frame = nullptr;

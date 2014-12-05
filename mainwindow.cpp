@@ -16,16 +16,19 @@
 
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+#include "ui_login.h"
 #include "page.h"
 
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
-    ui(new Ui::MainWindow)
+    _main_ui(new Ui::MainWindow),
+    _login_ui(new Ui::Login)
 {
-    ui->setupUi(this);
+    _main_ui->setupUi(this);
+    _login_ui->setupUi(this);
 
-    ui->scrollArea->verticalScrollBar()->setStyleSheet("QScrollBar {width:0px;}");
+    _main_ui->scrollArea->verticalScrollBar()->setStyleSheet("QScrollBar {width:0px;}");
 
     // = new QWeb(ui->mainPage);
     _page = new QWebPage();
@@ -39,21 +42,21 @@ MainWindow::MainWindow(QWidget *parent) :
     {
         QLabel* item = new QLabel();
         item->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Minimum));
-        item->setFixedWidth(ui->contents->width());
+        item->setFixedWidth(_main_ui->contents->width());
         item->setMinimumHeight(30);
         item->setWordWrap(true);
         _items.push_back(item);
-        ui->verticalLayout->addWidget(item);
+        _main_ui->verticalLayout->addWidget(item);
     }
 //    ui->contents->adjustSize();
-    qDebug()<<"h:"<<ui->contents->height()<<" w:"<<ui->contents->width();
+    qDebug()<<"h:"<<_main_ui->contents->height()<<" w:"<<_main_ui->contents->width();
 
 }
 
 
 MainWindow::~MainWindow()
 {
-    delete ui;
+    delete _main_ui;
     if (_view == nullptr) delete _view;
     if (_page == nullptr) delete _page;
     delete m_networkManager;
@@ -127,7 +130,7 @@ bool MainWindow::scrollEvent(QEvent* event)
 //    QScroller *scroller = QScroller::scroller(ui->centralWidget);
 //    scroller->scrollTo(QPointF(0, y_offset));
 //    ui->centralWidget->move(0, y_offset);
-    ui->contents->scroll(0,100);
+    _main_ui->contents->scroll(0,100);
     y_offset += 100;
     qDebug()<<"scrolling y:"<<y_offset;
 //    qDebug()<<y_offset;
@@ -168,8 +171,8 @@ void MainWindow::initDisplayItems()
 
         y_offset += 100;
     }
-    ui->contents->adjustSize();
-    qDebug()<<"h:"<<ui->contents->height()<<" w:"<<ui->contents->width();
-    emit QPaintEvent(ui->contents->rect());
+    _main_ui->contents->adjustSize();
+    qDebug()<<"h:"<<_main_ui->contents->height()<<" w:"<<_main_ui->contents->width();
+    emit QPaintEvent(_main_ui->contents->rect());
 }
 
